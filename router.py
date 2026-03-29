@@ -20,11 +20,14 @@ async def upload_file(file: UploadFile = File(...)):
     pages = extract_pages_from_pdf(file_path)
     
     print(f"Extracted {len(pages)} pages from the PDF.")
-    print(f"First page content (truncated): {pages[0][:200]}")
-    # os.remove(file_path)
+    # print(f"First page content (truncated): {pages[0][:200]}")
+    os.remove(file_path)
     
-    # embeddings = embed_text(pages, doc_title=file.filename)
+    chunks = embed_text(pages, doc_title=file.filename)
     
-    # upsert_embeddings_to_db(embeddings)    
+    print(f"Generated {len(chunks)} chunks for the document.")
+    # print(f"First chunk metadata: {chunks}")
+    
+    upsert_embeddings_to_db(chunks)    
         
     return {"success": True, "filename": file.filename, "message": "File uploaded successfully"}

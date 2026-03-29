@@ -4,6 +4,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 from pinecone import Pinecone, ServerlessSpec
 from config import PINECONE_API_KEY, PINECONE_INDEX_NAME
+import time
 
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -49,16 +50,17 @@ def embed_text(pages: list[str], doc_title: str = "Uploaded Document") -> list[d
         
         all_chunks = [doc.page_content for doc in docs]
         
-        vectors = embedding_model.encode(all_chunks, convert_to_numpy=True)
+        # vectors = embedding_model.encode(all_chunks, convert_to_numpy=True)
+        
+        # return all_chunks
         
         return [
             {
                 "id": str(uuid.uuid4()),
-                "values": vectors[i].tolist(),
-                "metadata": {
-                    "text": all_chunks[i],
-                    "doc_title": doc_title,
-                }
+                # "values": vectors[i].tolist(),
+                "chunk_text": all_chunks[i],
+                "doc_title": doc_title,
+                
             }
             for i in range(len(all_chunks))
         ]
@@ -70,19 +72,36 @@ def embed_text(pages: list[str], doc_title: str = "Uploaded Document") -> list[d
 def upsert_embeddings_to_db(embeddings: list):
     pc = Pinecone(api_key=PINECONE_API_KEY)
     index_name = PINECONE_INDEX_NAME
-    index = pc.create_index(
-        name=index_name,
-        spec=ServerlessSpec(
-            
-        )
-        )
     
-    batch_size = 100
+    if not pc.has_index(index_name):
+        pc.create_index_for_model(
+            name=index_name,
+            cloud="aws",
+            region="us-east-1",
+            embed={
+                "model":"llama-text-embed-v2",
+                "field_map":{"text": "chunk_text"}
+            }
+        )
+
+    dense_index = pc.Index(index_name)
+    
     try:
-        for i in range(0, len(embeddings), batch_size):
-            batch = embeddings[i:i + batch_size]
-            index.upsert(vectors=batch, namespace="chatpdf")
-            
+        dense_index.upsert_records("chatpdf", records=embeddings)
+    
+        time.sleep(10)
+    
+        stats = dense_index.describe_index_stats()
+        print(f"Index stats after upsert: {stats}")
     except Exception as e:
         print(f"Error upserting embeddings to DB: {e}")
-        return []
+    
+    # batch_size = 100
+    # try:
+    #     for i in range(0, len(embeddings), batch_size):
+    #         batch = embeddings[i:i + batch_size]
+    #         index.upsert(vectors=batch, namespace="chatpdf")
+            
+    # except Exception as e:
+    #     print(f"Error upserting embeddings to DB: {e}")
+    #     return []
