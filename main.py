@@ -3,6 +3,8 @@ import socketio
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from router import router
+from llm import llm
+import json
 
 app = FastAPI()
 
@@ -35,8 +37,15 @@ async def disconnect(sid):
 @sio.event
 async def message(sid, data):
     print(f"Message from {sid}: {data}")
-    await sio.emit('response', {'data': 'Message received: ' + data}, to=sid)
+    MAX_CHARS = 4000  # adjust based on model
+
+    if len(data) > MAX_CHARS:
+        data = data[:MAX_CHARS]
+    response = llm.invoke(data)
+    print(f"Response to {sid}: {response}")
+    await sio.emit('response', {'data': json.dumps(response.content)}, to=sid)
 
 
 if __name__ == "__main__":
+    print("Server is running on http://localhost:8000")
     uvicorn.run(sio_app, host="0.0.0.0", port=8000, log_level="warning")
