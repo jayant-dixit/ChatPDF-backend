@@ -7,6 +7,10 @@ dotenv.load_dotenv()
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+SMTP_SERVER = os.getenv("SMTP_SERVER")
+SMTP_PORT = os.getenv("SMTP_PORT")
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+PASSWORD = os.getenv("PASSWORD")
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
 index_name = PINECONE_INDEX_NAME

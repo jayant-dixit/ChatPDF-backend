@@ -1,4 +1,7 @@
-from config import dense_index
+from config import dense_index, SMTP_PORT, SENDER_EMAIL, PASSWORD, SMTP_SERVER
+import smtplib
+from email.message import EmailMessage
+import ssl
 
 def ragQueryTool(query):
     """
@@ -21,12 +24,37 @@ def ragQueryTool(query):
             }   
         )
         
-        print(f"RAG query results for '{query}':", results)
-        # for hit in results['result']['hits']:
-        #     print(f"id: {hit['_id']:<5} | score: {round(hit['_score'], 2):<5} | text: {hit['fields']['chunk_text']:<50}")
-        
         return results
     except Exception as e:
         print(f"Error performing RAG query: {e}")
         return None
+    
+    
+def sendEmailTool(recipient_email: str, subject: str, body: str):
+    """
+    A function for sending emails.
+    """
+    if(not recipient_email or not subject or not body):
+        return "Recipient email, subject, and body are required to send an email."
+    
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = recipient_email
+    msg.set_content(body)
+    
+    try:
+        context = ssl.create_default_context()
+
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls(context=context)
+            server.login(SENDER_EMAIL, PASSWORD)
+            server.send_message(msg)   
+            print("Email sent successfully!")
+        
+        return "Email sent successfully!"
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return "Failed to send email."
+
         

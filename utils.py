@@ -1,11 +1,7 @@
 import fitz
 import uuid
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sentence_transformers import SentenceTransformer
-from config import dense_index
-import time
-
-embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+from config import pc, PINECONE_INDEX_NAME
 
 def extract_pages_from_pdf(file_path: str) -> list:
     try:
@@ -49,10 +45,6 @@ def embed_text(pages: list[str], doc_title: str = "Uploaded Document") -> list[d
         
         all_chunks = [doc.page_content for doc in docs]
         
-        # vectors = embedding_model.encode(all_chunks, convert_to_numpy=True)
-        
-        # return all_chunks
-        
         return [
             {
                 "id": str(uuid.uuid4()),
@@ -70,6 +62,18 @@ def embed_text(pages: list[str], doc_title: str = "Uploaded Document") -> list[d
     
 def upsert_embeddings_to_db(embeddings: list):    
     try:
+        if not pc.has_index(PINECONE_INDEX_NAME):
+            pc.create_index_for_model(
+                name=PINECONE_INDEX_NAME,
+                cloud="aws",
+                region="us-east-1",
+                embed={
+                    "model":"llama-text-embed-v2",
+                    "field_map":{"text": "chunk_text"}
+                }
+            )
+
+        dense_index = pc.Index(PINECONE_INDEX_NAME)
         dense_index.upsert_records("chatpdf", records=embeddings)
     
         # time.sleep(10)

@@ -1,11 +1,9 @@
 fastapi
 uvicorn
-python-socketio
 pydantic
 python-multipart
 pymupdf
 langchain-text-splitters
-sentence-transformers
 pinecone
 dotenv
 groq

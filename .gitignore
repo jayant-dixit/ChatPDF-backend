@@ -113,6 +113,8 @@ env/
 env.bak/
 venv.bak/
 
+myvenv/
+
 .myenv
 .myenv.*
 .myenv

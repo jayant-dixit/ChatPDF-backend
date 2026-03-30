@@ -1,26 +1,11 @@
 from langchain_core.messages import BaseMessage
 from typing import TypedDict, Sequence, Annotated
-from operator import add as add_messages
+# from operator import add as add_messages
 from config import GROQ_API_KEY
 from groq import Groq
-from tools import ragQueryTool
+from tools import ragQueryTool, sendEmailTool
 import json
 
-
-# model = init_chat_model("google_genai:gemini-2.5-flash-lite", 
-#                         api_key=GEMINI_API_KEY,
-#                         temperature=0.2,
-#                         max_output_tokens=512,
-#                         top_p=0.8
-#                         )
-
-# llm = ChatGroq(
-#     api_key=GROQ_API_KEY,
-#     model = "groq/compound",
-#     temperature=0.2,
-#     max_tokens=512,
-#     timeout=None,
-# )
 
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -40,10 +25,38 @@ toolsSchema = [{
             "required": ["query"]
         }
     }
-}]
+},
+    {
+    "type": "function",
+    "function": {
+        "name": "sendEmailTool",
+        "description": "Send an email.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "recipient_email": {
+                    "type": "string",
+                    "description": "The email address of the recipient."
+                },
+                "subject": {
+                    "type": "string",
+                    "description": "The subject of the email."
+                },
+                "body": {
+                    "type": "string",
+                    "description": "The body of the email."
+                }
+            },
+            "required": ["recipient_email", "subject", "body"]
+        }
+    }
+    }
+]
+
 
 available_tools = {
-    "ragQueryTool": ragQueryTool
+    "ragQueryTool": ragQueryTool,
+    "sendEmailTool": sendEmailTool
 }
 
 def execute_tool_call(tool_call):
@@ -58,7 +71,7 @@ def execute_tool_call(tool_call):
 messages = [
     {
         "role": "system",
-        "content": "You are a helpful assistant for answering questions about the content of a PDF document that has been uploaded. You have access to a tool called 'ragQueryTool' that allows you to perform RAG queries on the document's content. Use this tool to find relevant information in the document to answer the user's questions."
+        "content": "You are a helpful assistant for answering questions about the content of a PDF document that has been uploaded. You have access to a tool called 'ragQueryTool' that allows you to perform RAG queries on the document's content. Use this tool to find relevant information in the document to answer the user's questions. and also you have access to a tool called 'sendEmailTool' that allows you to send emails. You can use this tool to send emails on behalf of the user when needed."
     }
 ]
 
