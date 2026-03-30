@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from router import router
 from llm import generate_response
 import json
+from config import pc, PINECONE_INDEX_NAME
 
 app = FastAPI()
 
@@ -32,6 +33,7 @@ async def connect(sid, environ):
     
 @sio.event
 async def disconnect(sid):
+    pc.delete_index(PINECONE_INDEX_NAME)
     print(f"Client disconnected: {sid}")
     
 @sio.event
