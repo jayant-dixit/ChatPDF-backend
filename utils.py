@@ -2,8 +2,7 @@ import fitz
 import uuid
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
-from pinecone import Pinecone, ServerlessSpec
-from config import PINECONE_API_KEY, PINECONE_INDEX_NAME
+from config import dense_index
 import time
 
 embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -69,27 +68,11 @@ def embed_text(pages: list[str], doc_title: str = "Uploaded Document") -> list[d
         print(f"Error embedding text: {e}")
         return []
     
-def upsert_embeddings_to_db(embeddings: list):
-    pc = Pinecone(api_key=PINECONE_API_KEY)
-    index_name = PINECONE_INDEX_NAME
-    
-    if not pc.has_index(index_name):
-        pc.create_index_for_model(
-            name=index_name,
-            cloud="aws",
-            region="us-east-1",
-            embed={
-                "model":"llama-text-embed-v2",
-                "field_map":{"text": "chunk_text"}
-            }
-        )
-
-    dense_index = pc.Index(index_name)
-    
+def upsert_embeddings_to_db(embeddings: list):    
     try:
         dense_index.upsert_records("chatpdf", records=embeddings)
     
-        time.sleep(10)
+        # time.sleep(10)
     
         stats = dense_index.describe_index_stats()
         print(f"Index stats after upsert: {stats}")

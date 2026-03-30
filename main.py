@@ -3,7 +3,7 @@ import socketio
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from router import router
-from llm import llm
+from llm import generate_response
 import json
 
 app = FastAPI()
@@ -41,9 +41,9 @@ async def message(sid, data):
 
     if len(data) > MAX_CHARS:
         data = data[:MAX_CHARS]
-    response = llm.invoke(data)
+    response = generate_response(data)
     print(f"Response to {sid}: {response}")
-    await sio.emit('response', {'data': json.dumps(response.content)}, to=sid)
+    await sio.emit('response', {'data': response}, to=sid)
 
 
 if __name__ == "__main__":
